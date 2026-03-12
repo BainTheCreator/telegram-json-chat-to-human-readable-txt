@@ -18,7 +18,7 @@ func ConvertJsonToText(jsonName string, dirName string, txtName string) {
 
 	jsonFile, err := os.Open(jsonPath)
 	if err != nil {
-		color.Red("Ошибка открытия файла: %v", err)
+		color.Red("Не удалось открыть файл «%s». Проверьте путь и права доступа: %v", jsonPath, err)
 		return
 	}
 	defer jsonFile.Close()
@@ -27,7 +27,7 @@ func ConvertJsonToText(jsonName string, dirName string, txtName string) {
 
 	err = json.NewDecoder(jsonFile).Decode(&chat)
 	if err != nil {
-		color.Red("Ошибка потокого парсинга JSON: %v", err)
+		color.Red("Не удалось прочитать данные: файл повреждён или это не диалог в формате JSON. Подробности: %v", err)
 		return
 	}
 
@@ -35,7 +35,7 @@ func ConvertJsonToText(jsonName string, dirName string, txtName string) {
 	messageList := helpers.ToMessageList(chat.Messages, types.ToMessageListOptions{})
 
 	if len(messageList) == 0 {
-		color.Red("Сообщений нет, файл не будет создан")
+		color.Red("В выбранном диалоге нет сообщений. Текстовый файл не создан.")
 		return
 	}
 
@@ -52,13 +52,13 @@ func ConvertJsonToText(jsonName string, dirName string, txtName string) {
 
 	err = os.MkdirAll(dirPath, 0755)
 	if err != nil {
-		color.Red("Ошибка создания директории: %v", err)
+		color.Red("Не удалось создать папку для результата «%s»: %v", dirPath, err)
 		return
 	}
 
 	txtFile, err := os.Create(filePath)
 	if err != nil {
-		color.Red("Ошибка создания файла: %v", err)
+		color.Red("Не удалось создать файл результата «%s». Проверьте права доступа: %v", filePath, err)
 		return
 	}
 	defer txtFile.Close()
@@ -68,14 +68,14 @@ func ConvertJsonToText(jsonName string, dirName string, txtName string) {
 	for _, msg := range messageList {
 		_, err := writer.WriteString(msg + "\n")
 		if err != nil {
-			color.Red("Ошибка записи в файл: %v", err)
+			color.Red("Ошибка при записи сообщений в файл «%s»: %v", filePath, err)
 			return
 		}
 	}
 
 	err = writer.Flush()
 	if err != nil {
-		color.Red("Ошибка сброса буфера: %v", err)
+		color.Red("Не удалось сохранить данные в файл «%s»: %v", filePath, err)
 	}
 
 	color.Green("Файл успешно создан: %s", filePath)
