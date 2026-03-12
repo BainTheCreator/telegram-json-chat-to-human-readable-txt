@@ -1,0 +1,24 @@
+# Бинарники и результат работы
+*.exe
+result/*
+data/*
+
+# Go
+/bin/
+/dist/
+*.test
+*.out
+go.work
+go.work.sum
+__debug_bin*
+
+# IDE и редакторы
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# ОС
+.DS_Store
+Thumbs.db
