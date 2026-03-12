@@ -1,70 +1,55 @@
 package main
 
 import (
-	"bufio"
-	helpers "chatreader/helpers"
-	types "chatreader/types"
-	"encoding/json"
-	"log"
+	"chatreader/helpers"
+	"chatreader/utils"
 	"os"
 	"path/filepath"
+	"strconv"
+
+	"github.com/fatih/color"
 )
 
 func main() {
-	// Открываем и читаем JSON файл
-	jsonFile, err := os.Open("data/result.json")
+	var (
+		numberOfJsonFiles      int
+		selectedNumberJsonFile string
+		dirName                string
+		txtName                string
+	)
+
+	entries, err := os.ReadDir("data")
 	if err != nil {
-		log.Fatalf("Ошибка открытия файла: %v", err)
-	}
-	defer jsonFile.Close()
-
-	var chat types.Chat
-
-	err = json.NewDecoder(jsonFile).Decode(&chat)
-	if err != nil {
-		log.Fatalf("Ошибка потокого парсинга JSON: %v", err)
-		return
+		color.Red("Ошибка чтения директории: %v", err)
+		helpers.ExitProgram()
 	}
 
-	// Обрабатываем список сообщений
-	messageList := helpers.ToMessageList(chat.Messages, types.ToMessageListOptions{})
-
-	if len(messageList) == 0 {
-		log.Println("Сообщений нет, файл не будет создан")
-		return
-	}
-
-	// Запись файла
-	filePath := filepath.Join("result", "result.txt")
-	dirPath := filepath.Dir(filePath)
-
-	err = os.MkdirAll(dirPath, 0755)
-	if err != nil {
-		log.Fatalf("Ошибка создания директории: %v", err)
-		return
-	}
-
-	txtFile, err := os.Create(filePath)
-	if err != nil {
-		log.Fatalf("Ошибка создания файла: %v", err)
-		return
-	}
-	defer txtFile.Close()
-
-	writer := bufio.NewWriter(txtFile)
-
-	for _, msg := range messageList {
-		_, err := writer.WriteString(msg + "\n")
-		if err != nil {
-			log.Fatalf("Ошибка записи в файл: %v", err)
-			return
+	for _, entry := range entries {
+		if !entry.IsDir() && filepath.Ext(entry.Name()) == ".json" {
+			numberOfJsonFiles++
 		}
 	}
 
-	err = writer.Flush()
-	if err != nil {
-		log.Fatalf("Ошибка сброса буфера: %v", err)
+	helpers.GetSelectedJsonFile(&selectedNumberJsonFile, numberOfJsonFiles, entries)
+	helpers.GetName(&dirName, "Введите название директории")
+	helpers.GetName(&txtName, "Введите название txt файла")
+
+	if txtName == "" {
+		txtName = "result"
 	}
 
-	log.Printf("Файл успешно создан: %s", filePath)
+	fileNumber, err := strconv.Atoi(selectedNumberJsonFile)
+	if err != nil {
+		color.Red("Ошибка конвертации строки в число: %v", err)
+		helpers.ExitProgram()
+	}
+
+	jsonFile, canContinue := helpers.GetJsonFileByNumber(fileNumber, entries)
+	if !canContinue {
+		color.Red("Файл не найден")
+		helpers.ExitProgram()
+	}
+
+	utils.ConvertJsonToText(jsonFile, dirName, txtName)
+	helpers.ExitProgram(0)
 }
